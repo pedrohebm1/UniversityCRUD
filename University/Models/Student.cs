@@ -6,7 +6,9 @@ public class Student
     [Key]
     public int StudentId { get; set; }
     public string Name { get; set; }
-
     public int CourseId { get; set; }
-    public Course Course { get; set; }
+    public Course? Course { get; set; }
+
+    public String City { get; set; }
+    public int Semester { get; set; }
 }
