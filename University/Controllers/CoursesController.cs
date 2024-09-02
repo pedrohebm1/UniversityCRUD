@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace University.Controllers
@@ -17,13 +12,11 @@ namespace University.Controllers
             _context = context;
         }
 
-        // GET: Courses
         public async Task<IActionResult> Index()
         {
             return View(await _context.Courses.ToListAsync());
         }
 
-        // GET: Courses/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -32,7 +25,9 @@ namespace University.Controllers
             }
 
             var course = await _context.Courses
+                .Include(c => c.Students)
                 .FirstOrDefaultAsync(m => m.CourseId == id);
+
             if (course == null)
             {
                 return NotFound();
@@ -41,21 +36,23 @@ namespace University.Controllers
             return View(course);
         }
 
-        // GET: Courses/Create
         public IActionResult Create()
         {
             return View();
         }
 
-        // POST: Courses/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("CourseId,Name")] Course course)
         {
             if (ModelState.IsValid)
             {
+                if (_context.Courses.Any(c => c.Name == course.Name))
+                {
+                    ModelState.AddModelError("", "Error. The name inserted already exists.");
+                    return View(course);
+                }
+
                 _context.Add(course);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -63,7 +60,6 @@ namespace University.Controllers
             return View(course);
         }
 
-        // GET: Courses/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -79,12 +75,9 @@ namespace University.Controllers
             return View(course);
         }
 
-        // POST: Courses/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("CourseId,Name")] Course course)
+        public async Task<IActionResult> Edit(int id, [Bind("CourseId, Name")] Course course)
         {
             if (id != course.CourseId)
             {
@@ -95,12 +88,18 @@ namespace University.Controllers
             {
                 try
                 {
+                    if (_context.Courses.Any(c => c.Name == course.Name))
+                    {
+                        ModelState.AddModelError("", "The course's name inserted already exists.");
+                        return View(course);
+                    }
+
                     _context.Update(course);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!CourseExists(course.CourseId))
+                    if (!isCourseExists(course.CourseId))
                     {
                         return NotFound();
                     }
@@ -114,7 +113,6 @@ namespace University.Controllers
             return View(course);
         }
 
-        // GET: Courses/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -132,7 +130,6 @@ namespace University.Controllers
             return View(course);
         }
 
-        // POST: Courses/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
@@ -141,13 +138,17 @@ namespace University.Controllers
             if (course != null)
             {
                 _context.Courses.Remove(course);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                return NotFound();
             }
 
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool CourseExists(int id)
+        private bool isCourseExists(int id)
         {
             return _context.Courses.Any(e => e.CourseId == id);
         }
