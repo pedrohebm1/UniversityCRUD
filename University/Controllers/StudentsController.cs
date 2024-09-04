@@ -74,7 +74,7 @@ namespace University.Controllers
             {
                 return NotFound();
             }
-            ViewData["CourseId"] = new SelectList(_context.Courses, "CourseId", "CourseName", student.CourseId);
+            ViewData["CourseId"] = new SelectList(_context.Courses, "CourseId", "Name", student.CourseId);
             return View(student);
         }
 
